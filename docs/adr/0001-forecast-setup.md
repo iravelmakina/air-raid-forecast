@@ -256,4 +256,4 @@ Context: on validation, all 4 model candidates were slightly worse than baseline
 
 - **F1:** fresh out-of-sample check on nights after 12 Oct 2026 (note for the README).
 - **F3:** a later cutoff (e.g., 21:00) to capture attacks already under way, trading lead time for accuracy (D20-C).
-- **F2:** Telegram or other warning signals could be added later as a separate iteration. They are not added now, to reduce scope (see D10).
+- **F2:** Telegram or other warning signals could be added later as a separate iteration. They are not added now, to reduce scope (see D10). Not pre-registered before the v1 test, so any v2 must disclose that it was designed after seeing v1's results, and should ideally be judged on fresh nights (F1). Research notes (2026-10-14): history can be collected via a Telegram Desktop JSON export or Telethon (user API; needs an api_id). Only the *last* edit time is stored and earlier text is lost, so posts edited after the 18:00 cutoff must be dropped. Deleted posts are invisible (survivorship bias). Examples of Air Force launch warnings were posted after 18:00 (19:47, 22:27), so the signal is likely stronger combined with F3 (a later cutoff).
