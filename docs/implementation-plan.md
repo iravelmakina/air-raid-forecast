@@ -21,6 +21,7 @@ kyiv-night-alerts/
 │   └── analysis.py    # four fixed error-analysis checks (D15)
 ├── scripts/
 │   ├── 1_select.py    # validation only -> results/selection.json
+│   ├── 1b_revise.py   # one pre-registered revision round (D20) -> results/revision.json
 │   ├── 2_test.py      # single test run -> results/test_*; exits if results already exist
 │   └── 3_analyze.py   # D15 checks on saved test results -> results/analysis.md
 ├── tests/test_leakage.py
@@ -56,6 +57,7 @@ Data: downloaded on the first run from the pinned commit; it is not committed (`
 | 1 | Pin versions; `features.py` + leakage tests | All tests pass |
 | 2 | `model.py` + `1_select.py`; run validation | — |
 | 3 | **Review selection with the author** | Author approval before any test run |
+| 3b | One pre-registered revision round (ADR D20): `scripts/1b_revise.py` → `results/revision.json` | Acceptance rule applied mechanically |
 | 4 | `2_test.py` with bootstrap; run once | — |
 | 5 | `analysis.py` + `3_analyze.py` | — |
 | 6 | README (the author writes the reflection) | — |

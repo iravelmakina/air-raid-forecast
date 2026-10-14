@@ -1,6 +1,6 @@
 # ADR-0001: Forecasting setup for Kyiv night air raid alerts
 
-- **Status:** Accepted (D1–D19)
+- **Status:** Accepted (D1–D20; D20 pre-registered, outcome pending)
 - **Date:** 2026-10-14
 - **Living document:** updated after each decision step
 - **Working rule:** all decisions are made and a full implementation plan ([`docs/implementation-plan.md`](../implementation-plan.md)) is approved before any further code is written or run.
@@ -188,6 +188,16 @@ Found during implementation step 1: the last night in the file (13 Oct) was labe
 
 **B — Night complete only if it ended ≥ 24 h before the snapshot.** Wins as a general data-completeness rule that also protects future data refreshes; loses one night of recency. The test window shifts to 15 Jun – 12 Oct 2026.
 
+### D20: One revision round after validation (pre-registered before any result)
+
+Context: on validation, all 4 model candidates were slightly worse than baseline B (skill −0.1% to −0.6%). In the last 12 months of validation, Kyiv's own history barely correlates with tonight's outcome (30-night rate −0.10, last night 0.00), so more Kyiv-history features are not expected to help.
+
+**A — Run the test as locked.** Wins on zero risk of validation overfitting; loses on not testing any improvement idea.
+
+**B — One disciplined round with an approach-region feature.** Mechanism: attacks reach Kyiv through neighbouring regions, and neighbouring-region alerts are the strongest predictors in prior work (at 5–15 min horizons). Wins on testing one hypothesis with a real mechanism; loses on a small risk of validation overfitting and a possibly ~0 gain if most attacks launch after 18:00.
+
+**C — Later cutoff (e.g., 21:00).** Wins on likely more signal; loses because it reopens D1 and reduces the user's lead time.
+
 ## Decision
 
 - **D1 → D:** night window 22:00–06:00 Kyiv time, forecast at 18:00, output is a probability. This is the clearest real decision (DR2).
@@ -206,6 +216,11 @@ Found during implementation step 1: the last night in the file (13 Oct) was labe
 - **D14 → B:** the lowest validation Brier among the 4 candidates is locked. Then the locked model and baselines A and B30 run walk-forward over the test **once**. Reported: Brier, skill score vs. B30, hits / false alarms / misses / precision / recall at 50%, and the bootstrap range (1,000 resamples). **Pre-registered success criterion:** the model beats B only if skill > 0 **and** it is ahead in ≥ 90% of resamples; otherwise the conclusion is "no reliable improvement over B". A losing model is reported as is, with no re-runs.
 - **D15 → B, with settings fixed in advance:** (1) the last evening's weights plus each weight's min–max across the 120 test evenings; (2) calibration groups < 50%, 50–80%, ≥ 80%, with night counts; (3) the top 10 nights by squared error; (4) test nights 1–60 vs. 61–120, model vs. B within each half. Findings go to the README only and never trigger changes or re-runs.
 - **D16 → B:** standard README. The 100-word reflection is written by the author, not the AI. No charts, to keep scope small.
+- **D20 → B, pre-registered before running:**
+  - **New feature 7** `approach_regions_afternoon` = number of regions among {Kyivska, Chernihivska, Sumska, Zhytomyrska, Cherkaska, Poltavska oblast} with an alert **started 15:00–18:00** today (start times only, per D4).
+  - **One new candidate only:** feature set B + feature 7, sliding window.
+  - **Acceptance rule:** it replaces the locked model (set A, sliding) only if its validation Brier is lower by **≥ 0.001 on both halves**: 1 Oct 2024 – 31 Dec 2025 and 1 Jan – 14 Jun 2026.
+  - **Stop rule:** otherwise the locked model stays, the result is documented, and there are no further revision rounds.
 - **D18 → B:** feature 4 dropped. Feature set B is now features 1, 2, 3, 5, 6.
 - **D19 → B:** a night counts only if it ended ≥ 24 h before the snapshot. Both D18 and D19 were decided on principle (data consistency), before any model result existed.
 - **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
