@@ -52,10 +52,10 @@ runs = {
     "baseline_B": walk_forward(make_recent_rate(b_cfg["n"], b_cfg["smoothing"]), test_nights, labels, alerts),
 }
 
-metrics = {name: {"brier": brier(r), **decision_counts(r)} for name, r in runs.items()}
+metrics = {name: {"brier": float(brier(r)), **decision_counts(r)} for name, r in runs.items()}
 skill = skill_score(metrics["model"]["brier"], metrics["baseline_B"]["brier"])
 boot = paired_bootstrap(runs["model"], runs["baseline_B"])
-beats_b = skill > 0 and boot["share_model_ahead"] >= SUCCESS_SHARE
+beats_b = bool(skill > 0 and boot["share_model_ahead"] >= SUCCESS_SHARE)  # plain bool for JSON
 
 RES.mkdir(exist_ok=True)
 pd.DataFrame({"truth": runs["model"]["truth"], **{f"p_{k}": r["p"] for k, r in runs.items()}}).to_csv(RES / "test_predictions.csv")
@@ -67,8 +67,8 @@ SUMMARY.write_text(json.dumps({
     "model": final,
     "baseline_B": b_cfg,
     "metrics": metrics,
-    "skill_model_vs_B": skill,
-    "skill_A_vs_B": skill_score(metrics["baseline_A"]["brier"], metrics["baseline_B"]["brier"]),
+    "skill_model_vs_B": float(skill),
+    "skill_A_vs_B": float(skill_score(metrics["baseline_A"]["brier"], metrics["baseline_B"]["brier"])),
     "bootstrap": boot,
     "success_criterion": f"skill > 0 and model ahead in >= {SUCCESS_SHARE:.0%} of resamples",
     "model_beats_B": beats_b,
