@@ -1,0 +1,59 @@
+{
+  "label": "POST-HOC, NOT A CLEAN TEST: v2 was designed after seeing v1's test errors (ADR D21)",
+  "n_grid_validation": [
+    {
+      "n": 14,
+      "val_brier": 0.24912
+    },
+    {
+      "n": 30,
+      "val_brier": 0.24684
+    },
+    {
+      "n": 60,
+      "val_brier": 0.24427
+    }
+  ],
+  "n_locked": 60,
+  "metrics": {
+    "v2_recalibrated": {
+      "brier": 0.1989075010520209,
+      "avg_predicted": 0.6340105108880019,
+      "hits": 79,
+      "false_alarms": 31,
+      "misses": 6,
+      "correct_quiet": 4,
+      "recall": 0.9294117647058824,
+      "precision": 0.7181818181818181
+    },
+    "v1_model": {
+      "brier": 0.22629131184894863,
+      "avg_predicted": 0.5296655860458016,
+      "hits": 40,
+      "false_alarms": 5,
+      "misses": 45,
+      "correct_quiet": 30,
+      "recall": 0.47058823529411764,
+      "precision": 0.8888888888888888
+    },
+    "baseline_B": {
+      "brier": 0.20042317708333332,
+      "avg_predicted": 0.6625,
+      "hits": 85,
+      "false_alarms": 35,
+      "misses": 0,
+      "correct_quiet": 0,
+      "recall": 1.0,
+      "precision": 0.7083333333333334
+    }
+  },
+  "skill_v2_vs_B": 0.0075623790290592074,
+  "bootstrap": {
+    "n_resamples": 1000,
+    "seed": 42,
+    "skill_p05": -0.03539370805030088,
+    "skill_p95": 0.04763247517877522,
+    "share_model_ahead": 0.639
+  },
+  "would_pass_90pct_rule": false
+}

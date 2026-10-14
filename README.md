@@ -98,7 +98,30 @@ Full tables: [`results/analysis.md`](results/analysis.md).
 is as good as it gets with this data; predicting *which* nights will be quiet needs information about the attacks
 themselves.
 
-## 6. Limitations
+## 6. Post-hoc experiment (not a clean test)
+
+After the official test, we tried **one** fix for the diagnosed problem, written down before running it
+([ADR D21](docs/adr/0001-forecast-setup.md)). The model still decides which nights look riskier than average, but its
+overall level is adjusted every evening to match the alert rate of the last N nights. N was chosen on validation
+(N = 60).
+
+**This fix was designed after seeing where the model failed on the test nights, so its score on those same nights is
+optimistic.** It is not a fair estimate of future performance and does not replace the official result above.
+
+| Forecaster (test nights) | Brier ↓ | Average forecast (actual: 71%) |
+|---|---|---|
+| Model v1 (official) | 0.226 | 53% |
+| **Model v2 (recalibrated, post-hoc)** | **0.199** | 63% |
+| Baseline B | 0.200 | 66% |
+
+- v2 ties baseline B: skill +0.8%, 90% range −3.5% to +4.8%; v2 is ahead in 64% of resamples, far from the 90% bar.
+- On the calmer validation period, recalibration made the model *worse* (0.244 vs 0.241). It helps when the level jumps,
+  not in general.
+- **Conclusion:** fixing the level brings the model up to the simple 30-night rule, but not past it. History at 18:00
+  carries little information about *which* nights will be attacked. A clean check of v2 needs new nights after
+  12 Oct 2026.
+
+## 7. Limitations
 
 - One city, one forecast time, one data source.
 - The test is short (120 nights) and covers one sharp rise in attacks.
@@ -108,32 +131,32 @@ themselves.
   verified to be identical (fixed data, code, and random seed). See the git history.
 - The replay assumes alerts up to 18:00 are known at 18:00. That is true live, but this dataset updates once a day.
 
-## 7. Future work
+## 8. Future work
 
 - **Warning signals** (e.g. Ukrainian Air Force Telegram posts about launches or bomber activity). They were left out
   on purpose to keep scope small. Note: Telegram keeps only the last edit time of a post, so posts edited after 18:00
   must be dropped to avoid leakage.
 - **A later forecast time** (e.g. 21:00), when attacks may already be visible. This trades warning time for accuracy.
-- **Fix the level problem** (e.g. recalibrate the model to recent nights). This cannot be tried on the same test
-  honestly; check it on **new nights after 12 Oct 2026** instead.
+- **Check v2 on new nights** after 12 Oct 2026. That is the only clean way to know if recalibration really helps.
 
-## 8. How to run
+## 9. How to run
 
 Requires Python 3.12.
 
 ```bash
 pip install -r requirements.txt
-pytest                         # 5 leakage/label tests
+pytest                         # 6 leakage/label/math tests
 python scripts/1_select.py     # validation: choose baseline B settings and the model -> results/selection.json
 python scripts/1b_revise.py    # one pre-registered revision round -> results/revision.json
 python scripts/2_test.py       # the single test run -> results/test_*.{csv,json}
 python scripts/3_analyze.py    # error analysis -> results/analysis.md
+python scripts/4_posthoc.py    # post-hoc v2 (recalibration), labelled not-clean -> results/posthoc_*
 ```
 
-Each script takes from about a minute to a few minutes. `2_test.py` refuses to run if `results/test_summary.json`
-exists; to reproduce the test, run it in a fresh clone after deleting the `results/test_*` files.
+Each script takes from about a minute to a few minutes. `2_test.py` and `4_posthoc.py` refuse to run if their summary files exist; to reproduce, run them in a fresh
+clone after deleting `results/test_*` and `results/posthoc_*`.
 
-## 9. Repository map
+## 10. Repository map
 
 ```
 src/data.py         load pinned data, build night labels
