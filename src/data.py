@@ -13,6 +13,7 @@ REGION = "Kyiv City"
 NIGHT_START_H = 22   # 22:00 on day d
 NIGHT_END_H = 30     # 06:00 on day d+1  (= 24 + 6)
 FORECAST_H = 18      # forecast is made at 18:00 on day d
+COMPLETE_MARGIN_H = 24  # a night counts only if it ended >= 24 h before the snapshot (ADR D19)
 
 # Pinned dataset version: the source repo updates daily, so we fix one commit
 # to make every result reproducible.
@@ -50,8 +51,9 @@ def forecast_time(night: pd.Timestamp) -> pd.Timestamp:
 def build_night_labels(alerts: pd.DataFrame) -> pd.Series:
     """One row per night: 1 if any Kyiv City alert overlaps the night window.
 
-    Only nights that had fully ended before the data snapshot are included,
-    otherwise the last night could be labelled 'quiet' just because it was not over yet.
+    Only nights that ended at least 24 h before the data snapshot are included:
+    late "all clear" messages may not be in the file yet, so the newest night could
+    be mislabelled (ADR D19).
     """
     kyiv = alerts[alerts["region"] == REGION]
     snapshot_time = alerts["started_at"].max()  # proxy for when the file was built
@@ -63,8 +65,8 @@ def build_night_labels(alerts: pd.DataFrame) -> pd.Series:
     labels = {}
     for night in nights:
         start, end = night_window(night)
-        if end > snapshot_time:
-            continue  # night not finished in this data snapshot
+        if end > snapshot_time - pd.Timedelta(hours=COMPLETE_MARGIN_H):
+            continue  # night not safely complete in this data snapshot
         overlaps = (kyiv["started_at"] < end) & (kyiv["finished_at"] > start)
         labels[night] = int(overlaps.any())
     return pd.Series(labels, name="alert_night").rename_axis("night")

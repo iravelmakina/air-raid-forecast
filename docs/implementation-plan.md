@@ -16,7 +16,7 @@ kyiv-night-alerts/
 │   ├── data.py        # load pinned data, build night labels (ADR D1–D4)
 │   ├── baselines.py   # A all-history, B last N nights, optional smoothing (D7, D8)
 │   ├── evaluate.py    # walk-forward, cutoff assertions, Brier, counts, skill, paired bootstrap (D5, D6, D14)
-│   ├── features.py    # features 1–6, one function each, leakage guard documented (D11, D17)
+│   ├── features.py    # features 1, 2, 3, 5, 6 (feature 4 dropped, D18), one function each, leakage guard documented (D11, D17)
 │   ├── model.py       # logistic regression forecaster: scaling + training per evening (D12, D13)
 │   └── analysis.py    # four fixed error-analysis checks (D15)
 ├── scripts/
@@ -32,8 +32,8 @@ kyiv-night-alerts/
 
 - **Feature table:** one row per night, computed once from that night's own 18:00 history. The model at evening *d* trains only on rows of nights before *d*.
 - **Model per evening:** select training rows by window (expanding, or the last 365 nights) → fit scaling on those rows → fit logistic regression (library defaults) → predict tonight.
-- **Selection (`1_select.py`):** (a) B grid N ∈ {3, 7, 14, 30} × smoothing on/off; (b) 4 model candidates (feature set A/B × window expanding/sliding), all walk-forward over the validation period (1 Oct 2024 – 15 Jun 2026). Lowest Brier wins; tie rule per D17. Writes `results/selection.json`.
-- **Test (`2_test.py`):** locked model + baselines A and B, walk-forward over 16 Jun – 13 Oct 2026. Bootstrap: 1,000 paired resamples, seed 42. Writes per-night predictions (CSV) and summary metrics (JSON). **Exits with an error if test results already exist.**
+- **Selection (`1_select.py`):** (a) B grid N ∈ {3, 7, 14, 30} × smoothing on/off; (b) 4 model candidates (feature set A/B × window expanding/sliding), all walk-forward over the validation period (1 Oct 2024 – 14 Jun 2026). Lowest Brier wins; tie rule per D17. Writes `results/selection.json`.
+- **Test (`2_test.py`):** locked model + baselines A and B, walk-forward over 15 Jun – 12 Oct 2026. Bootstrap: 1,000 paired resamples, seed 42. Writes per-night predictions (CSV) and summary metrics (JSON). **Exits with an error if test results already exist.**
 - **Analysis (`3_analyze.py`):** reads the saved test outputs only; never re-runs the model.
 
 ## Automated checks (`tests/test_leakage.py`)
@@ -42,6 +42,7 @@ kyiv-night-alerts/
 2. An alert starting at 18:01 is invisible to that evening's features.
 3. An alert running at 18:00 has its end erased.
 4. Walk-forward never trains on the night it predicts.
+5. A night that ended < 24 h before the snapshot is excluded (added with D19).
 
 ## Environment
 

@@ -15,7 +15,9 @@ QUIET_CAP_HOURS = 168     # feature 5: cap (ADR D17)
 DAYTIME_START_H = 6       # features 3 and 6: window 06:00 .. cutoff (18:00)
 
 FEATURE_SET_A = ["rate_30", "last_night", "kyiv_daytime_alert"]
-FEATURE_SET_B = FEATURE_SET_A + ["kyiv_active_at_cutoff", "hours_since_kyiv_start", "other_regions_daytime"]
+FEATURE_SET_B = FEATURE_SET_A + ["hours_since_kyiv_start", "other_regions_daytime"]
+# Feature 4 ("Kyiv alert active at 18:00") was removed: it depends on end times,
+# which are guessed for some alerts (ADR D4, D18).
 
 
 def _day_start_local(history: History) -> pd.Timestamp:
@@ -56,13 +58,6 @@ def kyiv_daytime_alert(history: History) -> float:
     return float(((k["started_at"] >= start) & (k["started_at"] < end)).any())
 
 
-def kyiv_active_at_cutoff(history: History) -> float:
-    """4. 1 if a Kyiv City alert is still running at 18:00.
-    Guard: History erases end times after the cutoff (NaT), so 'running' is
-    detected without knowing when it ends."""
-    return float(_kyiv(history)["finished_at"].isna().any())
-
-
 def hours_since_kyiv_start(history: History) -> float:
     """5. Hours since the last Kyiv City alert STARTED, capped at 168 h.
     Guard: start times only (end times may be unknown or guessed, D4)."""
@@ -86,7 +81,6 @@ FEATURES = {
     "rate_30": rate_30,
     "last_night": last_night,
     "kyiv_daytime_alert": kyiv_daytime_alert,
-    "kyiv_active_at_cutoff": kyiv_active_at_cutoff,
     "hours_since_kyiv_start": hours_since_kyiv_start,
     "other_regions_daytime": other_regions_daytime,
 }

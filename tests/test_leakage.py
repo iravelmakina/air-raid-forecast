@@ -43,7 +43,6 @@ def test_2_alert_starting_after_cutoff_is_invisible():
     assert h.alerts.empty
     f = compute_features(h)
     assert f["kyiv_daytime_alert"] == 0
-    assert f["kyiv_active_at_cutoff"] == 0
     assert f["other_regions_daytime"] == 0
 
 
@@ -51,7 +50,6 @@ def test_3_running_alert_has_end_erased():
     alerts = alerts_df([(REGION, kyiv("2026-01-10 17:30"), kyiv("2026-01-10 19:00"), False)])
     h = history_at(NIGHT, labels_up_to(NIGHT), alerts)
     assert h.alerts["finished_at"].isna().all()
-    assert compute_features(h)["kyiv_active_at_cutoff"] == 1
 
 
 def test_4_walk_forward_never_sees_predicted_night():
@@ -69,3 +67,13 @@ def test_4_walk_forward_never_sees_predicted_night():
     nights = labels.index[-5:]
     walk_forward(spy, nights, labels, alerts)
     assert len(seen) == 5
+
+
+def test_5_night_too_close_to_snapshot_is_excluded():
+    alerts = alerts_df([
+        (REGION, kyiv("2026-01-09 12:00"), kyiv("2026-01-09 12:20"), False),
+        (REGION, kyiv("2026-01-10 23:00"), kyiv("2026-01-10 23:30"), False),
+        ("Lvivska oblast", kyiv("2026-01-11 20:00"), kyiv("2026-01-11 20:30"), False),  # snapshot only 14 h after the night ended
+    ])
+    labels = build_night_labels(alerts)
+    assert NIGHT not in labels.index

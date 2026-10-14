@@ -1,6 +1,6 @@
 # ADR-0001: Forecasting setup for Kyiv night air raid alerts
 
-- **Status:** Accepted (D1–D17)
+- **Status:** Accepted (D1–D19)
 - **Date:** 2026-10-14
 - **Living document:** updated after each decision step
 - **Working rule:** all decisions are made and a full implementation plan ([`docs/implementation-plan.md`](../implementation-plan.md)) is approved before any further code is written or run.
@@ -116,7 +116,7 @@ Candidate features, each computable from the alert history before 18:00:
 
 **A — Minimal set (1–3).** Kyiv-only recent state. Wins on simplicity; loses on adding little beyond what baseline B already knows.
 
-**B — Medium set (1–6).** Adds the current state, quiet time, and nationwide activity. Wins on information beyond B (especially 6); loses on more leakage guards to check.
+**B — Medium set (1–6; feature 4 later dropped by D18).** Adds the current state, quiet time, and nationwide activity. Wins on information beyond B (especially 6); loses on more leakage guards to check.
 
 **C — Large set (1–7 plus several window lengths and lags).** Wins on breadth; loses on overfitting risk with ~1,000–1,700 training nights.
 
@@ -172,17 +172,33 @@ Sub-choices fixed before any model result:
 
 An earlier AI proposal of a 720 h cap was not based on data (it would never trigger) and was rejected after a data check.
 
+### D18: Feature 4 ("Kyiv alert active at 18:00")
+
+Found during implementation step 1: whether an alert is still running at 18:00 depends on its end time, which is guessed (+30 min) for some alerts. This contradicts D4.
+
+**A — Keep it.** Wins on a possibly useful "attack under way" signal; loses on consistency with D4, because part of its values would be invented.
+
+**B — Drop it.** Wins on consistency with D4; the "an alert just started" information is largely kept by feature 5 (start times only). Loses on a small amount of information.
+
+### D19: When a night counts as complete
+
+Found during implementation step 1: the last night in the file (13 Oct) was labelled quiet, but its only Kyiv alert started at 17:55 with a guessed end and was the last Kyiv alert in the file. Its "all clear" may simply not have been in the snapshot yet.
+
+**A — Night complete once it ended before the snapshot.** Wins on keeping the newest night; loses on possible mislabels from late messages.
+
+**B — Night complete only if it ended ≥ 24 h before the snapshot.** Wins as a general data-completeness rule that also protects future data refreshes; loses one night of recency. The test window shifts to 15 Jun – 12 Oct 2026.
+
 ## Decision
 
 - **D1 → D:** night window 22:00–06:00 Kyiv time, forecast at 18:00, output is a probability. This is the clearest real decision (DR2).
 - **D2 → A:** Kyiv City. It is the only well-known unit unaffected by the reform (DR6).
 - **D3 → B:** volunteer file, pinned to commit `7be33582f840bf99b14f92118b40f6131b492e7c`. It is the only current source that fits the budget (DR1, DR4).
 - **D4 → A:** keep guessed end times; no duration-based inputs. The labels are robust to them.
-- **D5 → C:** walk-forward over the last 120 complete nights, **16 Jun – 13 Oct 2026** (DR1, DR3).
+- **D5 → C:** walk-forward over the last 120 complete nights, **15 Jun – 12 Oct 2026** (DR1, DR3). Amended by D19; originally 16 Jun – 13 Oct.
 - **D6 → B + C:** Brier and skill score are the verdict. Hits, false alarms, misses, precision and recall at a **fixed 50% threshold** are reported for the model and the baselines, to show the consequences of acting on the forecast.
 - **D7 → A + B:** B is the reference for the skill score; C is dropped.
-- **D8 → C:** settings for B are chosen on validation only. The re-run on the D9-C validation picked **N=30, smoothed** (validation Brier 0.241; test Brier 0.203). This supersedes the earlier pick on the D9-A validation (N=14, smoothed). At the 50% threshold, B30 warns on every test night (85 hits, 35 false alarms, 0 misses), so as a decision rule it equals "always warn".
-- **D9 → C:** validation is 1 Oct 2024 – 15 Jun 2026. Training always starts on 26 Feb 2022 and grows by one night each evening.
+- **D8 → C:** settings for B are chosen on validation only. The re-run on the D9-C validation picked **N=30, smoothed** (validation Brier 0.241; test Brier 0.203 on the pre-D19 test window, to be recomputed in the official test run). This supersedes the earlier pick on the D9-A validation (N=14, smoothed). At the 50% threshold, B30 warns on every test night (85 hits, 35 false alarms, 0 misses), so as a decision rule it equals "always warn".
+- **D9 → C:** validation is 1 Oct 2024 – 14 Jun 2026 (end moved by one night by D19). Training always starts on 26 Feb 2022 and grows by one night each evening.
 - **D10 → A:** skip text/media data. Accepted trade-off: possibly the strongest signal is left out, in exchange for time and a simpler setup suited to learning the core concepts first. Recorded as future work in the README.
 - **D11 → A and B as candidates:** the choice between them is made on validation. Day of week (7) is excluded.
 - **D12 → A and B as candidates:** chosen on validation. Allowed even though the baselines have already run, because the window is a model setting and the model has not touched the test.
@@ -190,7 +206,9 @@ An earlier AI proposal of a 720 h cap was not based on data (it would never trig
 - **D14 → B:** the lowest validation Brier among the 4 candidates is locked. Then the locked model and baselines A and B30 run walk-forward over the test **once**. Reported: Brier, skill score vs. B30, hits / false alarms / misses / precision / recall at 50%, and the bootstrap range (1,000 resamples). **Pre-registered success criterion:** the model beats B only if skill > 0 **and** it is ahead in ≥ 90% of resamples; otherwise the conclusion is "no reliable improvement over B". A losing model is reported as is, with no re-runs.
 - **D15 → B, with settings fixed in advance:** (1) the last evening's weights plus each weight's min–max across the 120 test evenings; (2) calibration groups < 50%, 50–80%, ≥ 80%, with night counts; (3) the top 10 nights by squared error; (4) test nights 1–60 vs. 61–120, model vs. B within each half. Findings go to the README only and never trigger changes or re-runs.
 - **D16 → B:** standard README. The 100-word reflection is written by the author, not the AI. No charts, to keep scope small.
-- **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 4 = a Kyiv City alert active at 18:00, with its end never used; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
+- **D18 → B:** feature 4 dropped. Feature set B is now features 1, 2, 3, 5, 6.
+- **D19 → B:** a night counts only if it ended ≥ 24 h before the snapshot. Both D18 and D19 were decided on principle (data consistency), before any model result existed.
+- **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
 
 ### Expected Benefits
 
@@ -220,5 +238,5 @@ An earlier AI proposal of a 720 h cap was not based on data (it would never trig
 
 ## Future Decisions
 
-- **F1:** fresh out-of-sample check on nights after 13 Oct 2026 (note for the README).
+- **F1:** fresh out-of-sample check on nights after 12 Oct 2026 (note for the README).
 - **F2:** Telegram or other warning signals could be added later as a separate iteration. They are not added now, to reduce scope (see D10).
