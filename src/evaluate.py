@@ -28,7 +28,7 @@ def history_at(night, labels, alerts) -> History:
     past_alerts = alerts[alerts["started_at"] < cutoff].copy()
     still_running = past_alerts["finished_at"] > cutoff
     past_alerts.loc[still_running, "finished_at"] = pd.NaT
-    assert past_alerts["started_at"].max() < cutoff, "LEAK: alert after cutoff"
+    assert (past_alerts["started_at"] < cutoff).all(), "LEAK: alert after cutoff"
 
     return History(labels=past_labels, alerts=past_alerts, cutoff=cutoff)
 
