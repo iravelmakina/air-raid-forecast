@@ -9,7 +9,8 @@ the last 30 nights?"*, beats the machine-learning model. The model is too slow t
 in 2026. Details below.
 
 All decisions and their reasons are in [`docs/adr/0001-forecast-setup.md`](docs/adr/0001-forecast-setup.md); the
-build plan is in [`docs/implementation-plan.md`](docs/implementation-plan.md). The project was built with an AI
+build plan is in [`docs/implementation-plan.md`](docs/implementation-plan.md). A readable summary of how the project
+evolved, including the mistakes caught along the way, is in [`docs/process-summary.md`](docs/process-summary.md). The project was built with an AI
 assistant (Claude) as the main engineering tool; the full conversation log is submitted separately.
 
 ---
