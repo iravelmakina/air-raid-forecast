@@ -1,0 +1,119 @@
+{
+  "data_commit": "7be33582f840bf99b14f92118b40f6131b492e7c",
+  "validation": [
+    "2024-10-01",
+    "2026-06-14"
+  ],
+  "test": [
+    "2026-06-15",
+    "2026-10-12"
+  ],
+  "baseline_B": {
+    "n": 30,
+    "smoothing": true
+  },
+  "model": {
+    "features": "A",
+    "window": "sliding"
+  },
+  "baseline_B_grid": [
+    {
+      "n": 30,
+      "smoothing": true,
+      "val_brier": 0.24057
+    },
+    {
+      "n": 30,
+      "smoothing": false,
+      "val_brier": 0.24156
+    },
+    {
+      "n": 14,
+      "smoothing": true,
+      "val_brier": 0.2433
+    },
+    {
+      "n": 14,
+      "smoothing": false,
+      "val_brier": 0.24665
+    },
+    {
+      "n": 7,
+      "smoothing": true,
+      "val_brier": 0.25702
+    },
+    {
+      "n": 3,
+      "smoothing": true,
+      "val_brier": 0.26797
+    },
+    {
+      "n": 7,
+      "smoothing": false,
+      "val_brier": 0.27013
+    },
+    {
+      "n": 3,
+      "smoothing": false,
+      "val_brier": 0.31994
+    }
+  ],
+  "model_candidates": [
+    {
+      "features": "A",
+      "window": "expanding",
+      "val_brier": 0.24212,
+      "skill_vs_B": -0.00644
+    },
+    {
+      "features": "A",
+      "window": "sliding",
+      "val_brier": 0.24089,
+      "skill_vs_B": -0.00133
+    },
+    {
+      "features": "B",
+      "window": "expanding",
+      "val_brier": 0.24167,
+      "skill_vs_B": -0.00455
+    },
+    {
+      "features": "B",
+      "window": "sliding",
+      "val_brier": 0.24101,
+      "skill_vs_B": -0.00182
+    }
+  ],
+  "validation_summary": [
+    {
+      "forecaster": "A: all-history",
+      "brier": 0.2733,
+      "hits": 0,
+      "false_alarms": 0,
+      "misses": 352,
+      "correct_quiet": 270,
+      "recall": 0.0,
+      "precision": NaN
+    },
+    {
+      "forecaster": "B: last 30",
+      "brier": 0.2406,
+      "hits": 243,
+      "false_alarms": 176,
+      "misses": 109,
+      "correct_quiet": 94,
+      "recall": 0.6903,
+      "precision": 0.58
+    },
+    {
+      "forecaster": "Model",
+      "brier": 0.2409,
+      "hits": 278,
+      "false_alarms": 198,
+      "misses": 74,
+      "correct_quiet": 72,
+      "recall": 0.7898,
+      "precision": 0.584
+    }
+  ]
+}
