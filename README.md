@@ -123,7 +123,8 @@ optimistic.** It is not a fair estimate of future performance and does not repla
 
 ## 7. Limitations
 
-- One city, one forecast time, one data source.
+- One city, one forecast time, one data source. The 18:00 forecast time itself may limit what can be predicted:
+  attacks and warnings often become visible only later in the evening.
 - The test is short (120 nights) and covers one sharp rise in attacks.
 - Baseline scores on the test were looked at once early in the project, before some settings were fixed. This is
   disclosed in the ADR; the model itself touched the test only once.
@@ -133,10 +134,13 @@ optimistic.** It is not a fair estimate of future performance and does not repla
 
 ## 8. Future work
 
-- **Warning signals** (e.g. Ukrainian Air Force Telegram posts about launches or bomber activity). They were left out
-  on purpose to keep scope small. Note: Telegram keeps only the last edit time of a post, so posts edited after 18:00
-  must be dropped to avoid leakage.
-- **A later forecast time** (e.g. 21:00), when attacks may already be visible. This trades warning time for accuracy.
+- **Warning signals and forecast time, together.** Posts from the Ukrainian Air Force or monitoring channels on
+  Telegram (launches, bomber activity) could help tell attack nights from quiet ones. They were left out on purpose.
+  **It is not established that such warnings are published before 18:00.** Examples found were posted at 19:47 and
+  22:27. So the real limit may be the chosen forecast time, not only the missing data. The next step is to first
+  measure *when* warnings are usually published, then choose the forecast time (e.g. 21:00, trading warning time
+  for accuracy), and only then add the signals. (Leakage note: Telegram keeps only a post's last edit time, so posts
+  edited after the forecast time must be dropped.)
 - **Check v2 on new nights** after 12 Oct 2026. That is the only clean way to know if recalibration really helps.
 
 ## 9. How to run

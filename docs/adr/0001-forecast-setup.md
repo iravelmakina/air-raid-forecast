@@ -1,6 +1,6 @@
 # ADR-0001: Forecasting setup for Kyiv night air raid alerts
 
-- **Status:** Accepted (D1–D21)
+- **Status:** Accepted (D1–D22)
 - **Date:** 2026-10-14
 - **Living document:** updated after each decision step
 - **Working rule:** all decisions are made and a full implementation plan ([`docs/implementation-plan.md`](../implementation-plan.md)) is approved before any further code is written or run.
@@ -210,6 +210,14 @@ Context: the official test (D14) gave "no reliable improvement over B"; the mode
 
 Telegram data was considered for this round and **excluded**. It addresses a different problem (which night, not level), mixing two changes would make the result uninterpretable, and it stays F2.
 
+### D22: Stop iterating, or try Telegram after v2?
+
+Context: after v2 tied baseline B, adding Telegram warning signals was proposed as a further round.
+
+**A — Stop here and publish.** Wins on keeping the result clean and honest: two feature rounds and one recalibration all converge on "≈ baseline B", so further rounds on the same test nights risk searching until something wins. Loses on leaving the warning-signal question unanswered.
+
+**B — A minimal Telegram round (Air Force channel, keyword counts 12:00–18:00, post-hoc).** Wins on testing whether warning signals add information. Loses on 2.5–3 h plus a possible 24 h export delay, weak post-hoc evidence on the same test nights, and an expected gain near zero at an 18:00 cutoff.
+
 ## Decision
 
 - **D1 → D:** night window 22:00–06:00 Kyiv time, forecast at 18:00, output is a probability. This is the clearest real decision (DR2).
@@ -240,6 +248,7 @@ Telegram data was considered for this round and **excluded**. It addresses a dif
   - **Reporting:** separate script `scripts/4_posthoc.py` and `results/posthoc_*` files; the official v1 results stay untouched and remain *the* result. Same metrics as D14 (Brier, skill vs. B, bootstrap, counts). The 90% rule is reported but cannot make v2 official. README section titled "Post-hoc experiment (not a clean test)".
   - **One round only;** further ideas go to future work. A clean check needs fresh nights after 12 Oct 2026 (F1).
   - **Outcome (post-hoc):** validation chose N = 60 (Brier 0.2491 / 0.2468 / 0.2443 for N = 14 / 30 / 60). Note that all three are *worse* than v1 on validation (0.2409), so recalibration did not help in the calmer validation period. On the test period, v2 scored Brier 0.199 vs. B 0.200 vs. v1 0.226, with skill vs. B of +0.8% (90% range −3.5% to +4.8%; v2 ahead in 64% of resamples). This is a tie with B. Recalibration removed most of v1's level error (average prediction 63% vs. 71% actual, v1: 53%) but added no reliable ranking skill. The official verdict (D14) is unchanged.
+- **D22 → A:** stop iterating; Telegram stays F2. Key reasoning (author): Telegram may help, but **it is not established that relevant warnings are published before 18:00**. Launch warnings found in research were posted at 19:47 and 22:27. So the limiting factor may not be the missing data source but the **chosen forecast time (D1)**, or other factors such as how attacks are planned and announced. Adding Telegram at 18:00 would test the wrong thing. Any future work should revisit the forecast time *together with* warning signals (F2 + F3), first checking *when* warnings are typically published, and should be judged on fresh nights (F1).
 - **D18 → B:** feature 4 dropped. Feature set B is now features 1, 2, 3, 5, 6.
 - **D19 → B:** a night counts only if it ended ≥ 24 h before the snapshot. Both D18 and D19 were decided on principle (data consistency), before any model result existed.
 - **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
@@ -273,5 +282,5 @@ Telegram data was considered for this round and **excluded**. It addresses a dif
 ## Future Decisions
 
 - **F1:** fresh out-of-sample check on nights after 12 Oct 2026 (note for the README).
-- **F3:** a later cutoff (e.g., 21:00) to capture attacks already under way, trading lead time for accuracy (D20-C).
+- **F3:** a later cutoff (e.g., 21:00) to capture attacks already under way, trading lead time for accuracy (D20-C). To be decided together with F2 (D22): first measure when warnings are typically published, then choose the forecast time.
 - **F2:** Telegram or other warning signals could be added later as a separate iteration. They are not added now, to reduce scope (see D10). Not pre-registered before the v1 test, so any v2 must disclose that it was designed after seeing v1's results, and should ideally be judged on fresh nights (F1). Research notes (2026-10-14): history can be collected via a Telegram Desktop JSON export or Telethon (user API; needs an api_id). Only the *last* edit time is stored and earlier text is lost, so posts edited after the 18:00 cutoff must be dropped. Deleted posts are invisible (survivorship bias). Examples of Air Force launch warnings were posted after 18:00 (19:47, 22:27), so the signal is likely stronger combined with F3 (a later cutoff).
