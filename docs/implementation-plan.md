@@ -23,7 +23,8 @@ kyiv-night-alerts/
 │   ├── 1_select.py    # validation only -> results/selection.json
 │   ├── 1b_revise.py   # one pre-registered revision round (D20) -> results/revision.json
 │   ├── 2_test.py      # single test run -> results/test_*; exits if results already exist
-│   └── 3_analyze.py   # D15 checks on saved test results -> results/analysis.md
+│   ├── 3_analyze.py   # D15 checks on saved test results -> results/analysis.md
+│   └── 4_posthoc.py   # post-hoc v2: recalibration (D21) -> results/posthoc_*; refuses to run twice
 ├── tests/test_leakage.py
 └── results/                   # committed outputs
 ```
@@ -61,6 +62,7 @@ Data: downloaded on the first run from the pinned commit; it is not committed (`
 | 4 | `2_test.py` with bootstrap; run once | — |
 | 5 | `analysis.py` + `3_analyze.py` | — |
 | 6 | README (the author writes the reflection) | — |
+| 6b | Post-hoc v2 (ADR D21): N chosen on validation, then one labelled run on the test period; README section | Pre-registered in the ADR before running |
 | 7 | Publish the organized repo to the author's GitHub | Author review of the structure |
 
 ## Delivery workflow

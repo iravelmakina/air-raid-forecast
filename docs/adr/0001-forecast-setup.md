@@ -1,6 +1,6 @@
 # ADR-0001: Forecasting setup for Kyiv night air raid alerts
 
-- **Status:** Accepted (D1–D20)
+- **Status:** Accepted (D1–D21; D21 pre-registered, outcome pending)
 - **Date:** 2026-10-14
 - **Living document:** updated after each decision step
 - **Working rule:** all decisions are made and a full implementation plan ([`docs/implementation-plan.md`](../implementation-plan.md)) is approved before any further code is written or run.
@@ -198,6 +198,18 @@ Context: on validation, all 4 model candidates were slightly worse than baseline
 
 **C — Later cutoff (e.g., 21:00).** Wins on likely more signal; loses because it reopens D1 and reduces the user's lead time.
 
+### D21: Post-hoc experiment after the test ("second look", v2)
+
+Context: the official test (D14) gave "no reliable improvement over B"; the model was reliably worse (skill −12.9%). The error analysis (D15) showed the main failure is the *level*: an average prediction of 53% vs. a 71% actual alert rate. Any change designed now is informed by the test, so its test score is optimistic and is reported only as a clearly labelled post-hoc result.
+
+**A — Recalibrate to recent nights.** The model ranks nights; the last N nights set the level. Wins on targeting exactly the diagnosed failure, and it is explainable; loses on one new setting (N).
+
+**B — Shorter training window (e.g., 90 nights).** Wins on faster level updates; loses on fewer examples and even less stable weights.
+
+**C — Blend model and baseline B.** Wins on simplicity; loses because it mostly copies B's level and obscures what the model adds.
+
+Telegram data was considered for this round and **excluded**. It addresses a different problem (which night, not level), mixing two changes would make the result uninterpretable, and it stays F2.
+
 ## Decision
 
 - **D1 → D:** night window 22:00–06:00 Kyiv time, forecast at 18:00, output is a probability. This is the clearest real decision (DR2).
@@ -222,6 +234,11 @@ Context: on validation, all 4 model candidates were slightly worse than baseline
   - **Acceptance rule:** it replaces the locked model (set A, sliding) only if its validation Brier is lower by **≥ 0.001 on both halves**: 1 Oct 2024 – 31 Dec 2025 and 1 Jan – 14 Jun 2026.
   - **Stop rule:** otherwise the locked model stays, the result is documented, and there are no further revision rounds.
   - **Outcome: REJECTED.** Validation Brier, half 1 / half 2: locked 0.2362 / 0.2537; candidate 0.2360 / 0.2580; baseline B 0.2329 / 0.2617. The candidate was better by only 0.0002 on half 1 (below the margin) and worse on half 2. Feature 7's weight was small (+0.03 on scaled inputs). **The locked model (set A, sliding) goes to the test unchanged.** Approach-region activity at 15:00–18:00 adds no usable signal at this cutoff; consistent with the D20-C idea (a later cutoff) being the more promising direction, recorded as future work.
+- **D21 → A, pre-registered before running:**
+  - **Method:** each evening, train the locked model (set A, sliding). Let it predict the last N finished nights (all known at 18:00). Shift tonight's probability on the log-odds scale by `logit(r) − logit(p̄)`, where p̄ is the model's average prediction on those nights and r = (alert nights + 1) / (N + 2) is their smoothed actual rate.
+  - **N** is chosen **on validation** from {14, 30, 60} by lowest Brier. Tie rule: within 0.001, the larger N (more stable).
+  - **Reporting:** separate script `scripts/4_posthoc.py` and `results/posthoc_*` files; the official v1 results stay untouched and remain *the* result. Same metrics as D14 (Brier, skill vs. B, bootstrap, counts). The 90% rule is reported but cannot make v2 official. README section titled "Post-hoc experiment (not a clean test)".
+  - **One round only;** further ideas go to future work. A clean check needs fresh nights after 12 Oct 2026 (F1).
 - **D18 → B:** feature 4 dropped. Feature set B is now features 1, 2, 3, 5, 6.
 - **D19 → B:** a night counts only if it ended ≥ 24 h before the snapshot. Both D18 and D19 were decided on principle (data consistency), before any model result existed.
 - **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
