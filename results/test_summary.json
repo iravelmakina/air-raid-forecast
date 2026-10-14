@@ -1,0 +1,56 @@
+{
+  "data_commit": "7be33582f840bf99b14f92118b40f6131b492e7c",
+  "test": [
+    "2026-06-15",
+    "2026-10-12"
+  ],
+  "alert_night_rate": 0.7083333333333334,
+  "model": {
+    "features": "A",
+    "window": "sliding"
+  },
+  "baseline_B": {
+    "n": 30,
+    "smoothing": true
+  },
+  "metrics": {
+    "model": {
+      "brier": 0.22629131184894863,
+      "hits": 40,
+      "false_alarms": 5,
+      "misses": 45,
+      "correct_quiet": 30,
+      "recall": 0.47058823529411764,
+      "precision": 0.8888888888888888
+    },
+    "baseline_A": {
+      "brier": 0.2750112785472115,
+      "hits": 0,
+      "false_alarms": 0,
+      "misses": 85,
+      "correct_quiet": 35,
+      "recall": 0.0,
+      "precision": NaN
+    },
+    "baseline_B": {
+      "brier": 0.20042317708333332,
+      "hits": 85,
+      "false_alarms": 35,
+      "misses": 0,
+      "correct_quiet": 0,
+      "recall": 1.0,
+      "precision": 0.7083333333333334
+    }
+  },
+  "skill_model_vs_B": -0.12906758161437426,
+  "skill_A_vs_B": -0.37215307405722564,
+  "bootstrap": {
+    "n_resamples": 1000,
+    "seed": 42,
+    "skill_p05": -0.25703112821044566,
+    "skill_p95": -0.03130646505405191,
+    "share_model_ahead": 0.016
+  },
+  "success_criterion": "skill > 0 and model ahead in >= 90% of resamples",
+  "model_beats_B": false
+}
