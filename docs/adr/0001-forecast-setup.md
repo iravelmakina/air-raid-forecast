@@ -1,6 +1,6 @@
 # ADR-0001: Forecasting setup for Kyiv night air raid alerts
 
-- **Status:** Accepted (D1–D20; D20 pre-registered, outcome pending)
+- **Status:** Accepted (D1–D20)
 - **Date:** 2026-10-14
 - **Living document:** updated after each decision step
 - **Working rule:** all decisions are made and a full implementation plan ([`docs/implementation-plan.md`](../implementation-plan.md)) is approved before any further code is written or run.
@@ -221,6 +221,7 @@ Context: on validation, all 4 model candidates were slightly worse than baseline
   - **One new candidate only:** feature set B + feature 7, sliding window.
   - **Acceptance rule:** it replaces the locked model (set A, sliding) only if its validation Brier is lower by **≥ 0.001 on both halves**: 1 Oct 2024 – 31 Dec 2025 and 1 Jan – 14 Jun 2026.
   - **Stop rule:** otherwise the locked model stays, the result is documented, and there are no further revision rounds.
+  - **Outcome: REJECTED.** Validation Brier, half 1 / half 2: locked 0.2362 / 0.2537; candidate 0.2360 / 0.2580; baseline B 0.2329 / 0.2617. The candidate was better by only 0.0002 on half 1 (below the margin) and worse on half 2. Feature 7's weight was small (+0.03 on scaled inputs). **The locked model (set A, sliding) goes to the test unchanged.** Approach-region activity at 15:00–18:00 adds no usable signal at this cutoff; consistent with the D20-C idea (a later cutoff) being the more promising direction, recorded as future work.
 - **D18 → B:** feature 4 dropped. Feature set B is now features 1, 2, 3, 5, 6.
 - **D19 → B:** a night counts only if it ended ≥ 24 h before the snapshot. Both D18 and D19 were decided on principle (data consistency), before any model result existed.
 - **D17:** feature 5 is capped at **168 h** (B). Other fixed definitions (Kyiv local time, cutoff 18:00): feature 3 = a Kyiv City alert *started* 06:00–18:00 today; feature 6 = the number of *other* regions (excluding Kyiv City) with an alert started 06:00–18:00 today. Training rows with fewer than 30 past nights are dropped (feature 1 is undefined there). Tie rule in selection: a validation Brier difference < 0.001 goes to the simpler candidate (set A before B, expanding before sliding).
@@ -254,4 +255,5 @@ Context: on validation, all 4 model candidates were slightly worse than baseline
 ## Future Decisions
 
 - **F1:** fresh out-of-sample check on nights after 12 Oct 2026 (note for the README).
+- **F3:** a later cutoff (e.g., 21:00) to capture attacks already under way, trading lead time for accuracy (D20-C).
 - **F2:** Telegram or other warning signals could be added later as a separate iteration. They are not added now, to reduce scope (see D10).

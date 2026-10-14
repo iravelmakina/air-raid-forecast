@@ -1,0 +1,43 @@
+{
+  "rule": "candidate must beat locked model by >= 0.001 Brier on both validation halves (ADR D20)",
+  "halves": {
+    "half 1": [
+      "2024-10-01",
+      "2025-12-31"
+    ],
+    "half 2": [
+      "2026-01-01",
+      "2026-06-14"
+    ]
+  },
+  "brier": {
+    "locked: set A, sliding": {
+      "half 1": 0.23625,
+      "half 2": 0.25375,
+      "full": 0.24089
+    },
+    "candidate: set B + approach regions, sliding": {
+      "half 1": 0.23597,
+      "half 2": 0.25796,
+      "full": 0.24181
+    },
+    "baseline B: last 30": {
+      "half 1": 0.23293,
+      "half 2": 0.26173,
+      "full": 0.24057
+    }
+  },
+  "candidate_last_weights": {
+    "rate_30": -0.212,
+    "last_night": 0.02,
+    "kyiv_daytime_alert": -0.145,
+    "hours_since_kyiv_start": -0.048,
+    "other_regions_daytime": 0.027,
+    "approach_regions_afternoon": 0.027
+  },
+  "accepted": false,
+  "final_model": {
+    "features": "A",
+    "window": "sliding"
+  }
+}

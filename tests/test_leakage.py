@@ -44,6 +44,7 @@ def test_2_alert_starting_after_cutoff_is_invisible():
     f = compute_features(h)
     assert f["kyiv_daytime_alert"] == 0
     assert f["other_regions_daytime"] == 0
+    assert f["approach_regions_afternoon"] == 0
 
 
 def test_3_running_alert_has_end_erased():

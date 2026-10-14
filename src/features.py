@@ -16,8 +16,13 @@ DAYTIME_START_H = 6       # features 3 and 6: window 06:00 .. cutoff (18:00)
 
 FEATURE_SET_A = ["rate_30", "last_night", "kyiv_daytime_alert"]
 FEATURE_SET_B = FEATURE_SET_A + ["hours_since_kyiv_start", "other_regions_daytime"]
+APPROACH_REGIONS = ["Kyivska oblast", "Chernihivska oblast", "Sumska oblast",
+                    "Zhytomyrska oblast", "Cherkaska oblast", "Poltavska oblast"]
+APPROACH_START_H = 15     # feature 7: window 15:00 .. cutoff (18:00), ADR D20
+FEATURE_SET_B_PLUS = None  # defined below, after FEATURE_SET_B
 # Feature 4 ("Kyiv alert active at 18:00") was removed: it depends on end times,
 # which are guessed for some alerts (ADR D4, D18).
+FEATURE_SET_B_PLUS = FEATURE_SET_B + ["approach_regions_afternoon"]  # ADR D20
 
 
 def _day_start_local(history: History) -> pd.Timestamp:
@@ -77,12 +82,22 @@ def other_regions_daytime(history: History) -> float:
     return float(a.loc[mask, "region"].nunique())
 
 
+def approach_regions_afternoon(history: History) -> float:
+    """7. Number of approach regions (around/towards Kyiv) with an alert STARTED 15:00–18:00 today.
+    Guard: alerts started before the cutoff only; start times only (D4). ADR D20."""
+    start = (_day_start_local(history) + pd.Timedelta(hours=APPROACH_START_H)).tz_convert("UTC")
+    a = history.alerts
+    mask = a["region"].isin(APPROACH_REGIONS) & (a["started_at"] >= start) & (a["started_at"] < history.cutoff)
+    return float(a.loc[mask, "region"].nunique())
+
+
 FEATURES = {
     "rate_30": rate_30,
     "last_night": last_night,
     "kyiv_daytime_alert": kyiv_daytime_alert,
     "hours_since_kyiv_start": hours_since_kyiv_start,
     "other_regions_daytime": other_regions_daytime,
+    "approach_regions_afternoon": approach_regions_afternoon,
 }
 
 
