@@ -68,3 +68,24 @@ def decision_counts(results: pd.DataFrame, threshold: float = 0.5) -> dict:
 def skill_score(model_brier: float, reference_brier: float) -> float:
     """Improvement over the reference baseline. > 0 better, 0 same, < 0 worse."""
     return 1 - model_brier / reference_brier
+
+
+def paired_bootstrap(model: pd.DataFrame, reference: pd.DataFrame, n: int = 1000, seed: int = 42) -> dict:
+    """Resample the test nights with replacement; recompute the skill score each time.
+
+    Paired: every resample uses the same nights for both forecasters (ADR D14).
+    """
+    import numpy as np
+    assert model.index.equals(reference.index)
+    err_m = ((model["p"] - model["truth"]) ** 2).to_numpy()
+    err_r = ((reference["p"] - reference["truth"]) ** 2).to_numpy()
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(err_m), size=(n, len(err_m)))
+    skills = 1 - err_m[idx].mean(axis=1) / err_r[idx].mean(axis=1)
+    return {
+        "n_resamples": n,
+        "seed": seed,
+        "skill_p05": float(np.percentile(skills, 5)),
+        "skill_p95": float(np.percentile(skills, 95)),
+        "share_model_ahead": float((skills > 0).mean()),
+    }
