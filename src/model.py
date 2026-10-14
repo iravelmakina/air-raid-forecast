@@ -3,6 +3,7 @@
 It uses a precomputed feature table (src/features.build_feature_table): each row
 was computed from that night's own 18:00 history, so rows never contain later data.
 """
+import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -43,3 +44,37 @@ class LogisticForecaster:
         """Weights of the last fitted evening (on scaled inputs, so they are comparable)."""
         scaler, model = self.last_fit
         return pd.Series(model.coef_[0], index=self.features)
+
+
+def _logit(p: float) -> float:
+    p = min(max(p, 1e-6), 1 - 1e-6)
+    return float(np.log(p / (1 - p)))
+
+
+def _sigmoid(x: float) -> float:
+    return float(1 / (1 + np.exp(-x)))
+
+
+def recalibrate(p_tonight: float, recent_preds, recent_truth) -> float:
+    """Shift tonight's probability on the log-odds scale so that the model's average on
+    recent nights would match their smoothed actual alert rate (ADR D21)."""
+    p_bar = float(np.mean(recent_preds))
+    r = (float(np.sum(recent_truth)) + 1) / (len(recent_truth) + 2)
+    return _sigmoid(_logit(p_tonight) + _logit(r) - _logit(p_bar))
+
+
+class RecalibratedForecaster:
+    """Post-hoc v2 (ADR D21): locked model ranks nights, the last N nights set the level."""
+
+    def __init__(self, base: LogisticForecaster, n_recent: int):
+        self.base = base
+        self.n_recent = n_recent
+
+    def __call__(self, history) -> float:
+        p = self.base(history)                                       # trains tonight's model
+        night = history.cutoff.tz_convert(TZ).normalize().tz_localize(None)
+        recent = self.base.table[self.base.table.index < night].dropna(subset=self.base.features).iloc[-self.n_recent:]
+        assert recent.index.max() < night, "LEAK: recalibration uses tonight or later"
+        scaler, model = self.base.last_fit
+        recent_preds = model.predict_proba(scaler.transform(recent[self.base.features]))[:, 1]
+        return recalibrate(p, recent_preds, recent["truth"].to_numpy())

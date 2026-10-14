@@ -78,3 +78,12 @@ def test_5_night_too_close_to_snapshot_is_excluded():
     ])
     labels = build_night_labels(alerts)
     assert NIGHT not in labels.index
+
+
+def test_6_recalibration_shift_math():
+    from src.model import recalibrate
+    # model averaged 50% on recent nights, 24 of 30 had alerts -> smoothed rate 25/32
+    p = recalibrate(0.55, [0.5] * 30, [1] * 24 + [0] * 6)
+    assert 0.80 < p < 0.83
+    # already calibrated -> almost unchanged
+    assert abs(recalibrate(0.55, [0.5] * 30, [1] * 15 + [0] * 15) - 0.55) < 1e-9
