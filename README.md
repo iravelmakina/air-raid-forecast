@@ -27,7 +27,7 @@ assistant (Claude) as the main engineering tool; the full conversation log is su
 - **Source:** volunteer dataset from [Vadimkin/ukrainian-air-raid-sirens-dataset](https://github.com/Vadimkin/ukrainian-air-raid-sirens-dataset)
   (`volunteer_data_en.csv`), **pinned to commit `7be3358`** so results are reproducible. It is downloaded automatically
   on the first run and is not stored in this repo.
-- **Covered:** 26 Feb 2022 – 12 Oct 2026, 1,690+ nights.
+- **Covered:** 26 Feb 2022 – 12 Oct 2026, about 1,690 nights.
 
 Problems found along the way, and what was done about them:
 
